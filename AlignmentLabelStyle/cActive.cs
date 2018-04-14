@@ -7,7 +7,7 @@ using Autodesk.Civil.ApplicationServices;
 using Autodesk.Civil.DatabaseServices;
 
 
-namespace AlignmentLabelStyle
+namespace AcSpeedy
 {
 	/// <summary>
 	/// Provides easy access to several "active" objects in the AutoCAD

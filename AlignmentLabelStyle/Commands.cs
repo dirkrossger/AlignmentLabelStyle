@@ -11,15 +11,15 @@ using Autodesk.Civil.DatabaseServices;
 using Autodesk.Civil.DatabaseServices.Styles;
 #endregion
 
-[assembly: CommandClass(typeof(AlignmentLabelStyle.Commands))]
+[assembly: CommandClass(typeof(AcSpeedy.Commands))]
 
 
-namespace AlignmentLabelStyle
+namespace AcSpeedy
 {
     public class Commands
     {
-        [CommandMethod("xx")]
-        public void CreateStyle()
+        [CommandMethod("cdGetName")]
+        public void GetAlignmentLabelStyle()
         {
             CivilDocument civilDoc = CivilApplication.ActiveDocument;
 
@@ -28,16 +28,13 @@ namespace AlignmentLabelStyle
                 // Get the desired Lable Styles collection
                 LabelStyleCollection lblStyleColl = civilDoc.Styles.LabelStyles.AlignmentLabelStyles.GeometryPointLabelStyles;
 
-                // Now get the Expression collection
-                // Expressions are unique to a particular label style type.
-                ExpressionCollection expColl = lblStyleColl.Expressions;
-
                 try
                 {
-                    foreach (Expression lblExp in expColl)
+                    Active.Editor.WriteMessage("\n{0} Labelstyles found.", lblStyleColl.Count);
+                    foreach (ObjectId item in lblStyleColl)
                     {
-                        Active.Editor.WriteMessage("\n Expression Name : " + lblExp.Name);
-                        Active.Editor.WriteMessage("\n Expression String : " + lblExp.ExpressionString);
+                        LabelStyle style = (LabelStyle)trans.GetObject(item, OpenMode.ForRead);
+                        Active.Editor.WriteMessage("\n Expression Name : " + style.Name);
                     }
                     trans.Commit();
                 }
@@ -47,35 +44,94 @@ namespace AlignmentLabelStyle
                 }
             }
 
-            //if (alignmentStyleId.IsNull)
-            //{
-            //    alignmentStyleId = civilDoc.Styles.AlignmentStyles.Add(oAlignmentSTName);
-            //    if ((alignmentStyleId == null))
-            //    {
-            //        MsgBox(("Error setting an Alignment Style: " + Err.Description));
-            //    }
+        }
 
-            //}
+        [CommandMethod("cdChangeName")]
+        public void ChangeAlignmentLabelStyle()
+        {
+            PromptEntityOptions options = new PromptEntityOptions("\nSelect Alignment: ");
+            options.SetRejectMessage("\nThe selected object is not a Alignment!");
+            options.AddAllowedClass(typeof(Alignment), false);
+            PromptEntityResult pres = Active.Editor.GetEntity(options);
+            if (pres.Status != PromptStatus.OK)
+                return;
 
-            //oAlignmentStyle = trans.GetObject(alignmentStyleId, OpenMode.ForWrite);
-            ////  Getting and setting style attributes for StyleBase objects
-            //// requires using a GetDisplayStyle*() method rather than a property.
-            //oAlignmentStyle.GetDisplayStyleModel(AlignmentDisplayStyleType.Arrow).Visible = false;
-            //oAlignmentStyle.GetDisplayStylePlan(AlignmentDisplayStyleType.Arrow).Visible = false;
-            //oAlignmentStyle.GetDisplayStyleModel(AlignmentDisplayStyleType.Curve).Color = Autodesk.AutoCAD.Colors.Color.FromRgb(58, 191, 13);
-            //oAlignmentStyle.GetDisplayStylePlan(AlignmentDisplayStyleType.Curve).Color = Autodesk.AutoCAD.Colors.Color.FromRgb(58, 191, 13);
-            //oAlignmentStyle.GetDisplayStyleModel(AlignmentDisplayStyleType.Curve).Visible = true;
-            //oAlignmentStyle.GetDisplayStylePlan(AlignmentDisplayStyleType.Curve).Visible = true;
-            //oAlignmentStyle.GetDisplayStyleModel(AlignmentDisplayStyleType.Line).Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 255);
-            ////  blue
-            //oAlignmentStyle.GetDisplayStylePlan(AlignmentDisplayStyleType.Line).Color = Autodesk.AutoCAD.Colors.Color.FromRgb(0, 0, 255);
-            ////  blue
-            //oAlignmentStyle.GetDisplayStyleModel(AlignmentDisplayStyleType.Line).Visible = true;
-            //oAlignmentStyle.GetDisplayStylePlan(AlignmentDisplayStyleType.Line).Visible = true;
-            //oAlignmentStyle.EnableRadiusSnap = true;
-            //oAlignmentStyle.RadiusSnapValue = 0.05;
-            ////  set a Radius Snap Value
-            //trans.Commit();
+            using (Transaction tr = HostApplicationServices.WorkingDatabase.TransactionManager.StartTransaction())
+            {
+                try
+                {
+                    Alignment align = (Alignment)tr.GetObject(pres.ObjectId, OpenMode.ForRead);
+                    //ObjectIdCollection ids = align.GetAlignmentLabelIds();
+                    ObjectIdCollection ids = align.GetAlignmentLabelGroupIds();
+                    foreach (ObjectId id in ids)
+                    {
+                        AlignmentLabelGroup style = (AlignmentLabelGroup)tr.GetObject(id, OpenMode.ForRead);
+                        Active.Editor.WriteMessage("\n " + style.ToString());
+                        //result:
+                        //Autodesk.Civil.DatabaseServices.AlignmentDesignSpeedLabelGroup
+                        //Autodesk.Civil.DatabaseServices.AlignmentGeometryPointLabelGroup
+                        //Autodesk.Civil.DatabaseServices.AlignmentMinorStationLabelGroup
+                        //Autodesk.Civil.DatabaseServices.AlignmentStationEquationLabelGroup
+                        //Autodesk.Civil.DatabaseServices.AlignmentStationLabelGroup
+
+                        //LabelType lblType = (LabelType)tr.GetObject(style.ObjectId, OpenMode.ForRead);     //Autodesk.Civil.DatabaseServices.LabelType
+                        //LabelStylesAlignmentRoot root = (LabelStylesRoot)tr.GetObject(id, OpenMode.ForRead); 
+
+
+
+                    }
+
+                    //Active.Editor.WriteMessage("\nAlignment Curve Label Style Name (before Change) : " + alignLabelStyle.Name);
+
+                    //// The following Style Name is specific to Tutorial DWG file - "Labels-6a.dwg"
+                    //alignLabelStyle.Name = "Design Data";
+                    //Active.Editor.WriteMessage("\nAlignment Curve Label Style Name (after Change) : " + alignLabelStyle.Name);
+
+                    tr.Commit();
+                }
+                catch (Autodesk.AutoCAD.Runtime.Exception ex)
+                {
+                    Active.Editor.WriteMessage("\n Exception message :" + ex.Message);
+                }
+            }
+        }
+
+
+        [CommandMethod("addStationOffsetLabel")]
+        public static void CmdAddStationOffsetLabel()
+        {
+            CivilDocument civilDoc = CivilApplication.ActiveDocument;
+            Database db = Application.DocumentManager.MdiActiveDocument.Database;
+            using (Transaction trans = db.TransactionManager.StartTransaction())
+            {
+                foreach (ObjectId alignId in civilDoc.GetSitelessAlignmentIds())
+                {
+                    Alignment align = trans.GetObject(alignId, OpenMode.ForRead) as Alignment;
+
+                    for (double s = align.StartingStation; s < align.EndingStation; s += align.StationIndexIncrement)
+                    {
+                        double easting = 0;
+                        double northing = 0;
+                        align.PointLocation(s, 0, ref easting, ref northing);
+
+                        Point2d p = new Point2d(easting, northing);
+                        StationOffsetLabel.Create(
+                          alignId,
+                          civilDoc.Styles.LabelStyles.AlignmentLabelStyles.StationOffsetLabelStyles[0],
+                          civilDoc.Styles.MarkerStyles[0],
+                          p);
+                    }
+                }
+                trans.Commit();
+            }
+        }
+
+
+        [CommandMethod("CreateDemoPointLabelStyle")]
+        public void CDS_CreateDemoPointLabelStyle()
+        {
+            AcSpeedy.cdAddLabelStyle lbl = new cdAddLabelStyle();
+            lbl.createPointLabelStyle("Demo");
         }
     }
 
@@ -84,7 +140,10 @@ namespace AlignmentLabelStyle
         [CommandMethod("info")]
         public void Initialize()
         {
-            Active.Editor.WriteMessage("\n-> Get AlignmentLabelStyleNames: xx");
+            Active.Editor.WriteMessage("\n-> Get AlignmentLabelStyleNames: cdGetName");
+            Active.Editor.WriteMessage("\n-> Change AlignmentLabelStyleNames: cdChangeName");
+            Active.Editor.WriteMessage("\n-> addStationOffsetLabel");
+            Active.Editor.WriteMessage("\n-> CreateDemoPointLabelStyle");
         }
 
         public void Terminate()
