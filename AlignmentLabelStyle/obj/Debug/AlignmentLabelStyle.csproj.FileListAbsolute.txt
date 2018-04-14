@@ -4,3 +4,9 @@ H:\GitExtenions\AlignmentLabelStyle\AlignmentLabelStyle\bin\Debug\AecBaseMgd.dll
 H:\GitExtenions\AlignmentLabelStyle\AlignmentLabelStyle\bin\Debug\AeccDbMgd.dll
 H:\GitExtenions\AlignmentLabelStyle\AlignmentLabelStyle\obj\Debug\AlignmentLabelStyle.dll
 H:\GitExtenions\AlignmentLabelStyle\AlignmentLabelStyle\obj\Debug\AlignmentLabelStyle.pdb
+H:\Github_Development\AlignmentLabelStyle\AlignmentLabelStyle\bin\Debug\AlignmentLabelStyle.dll
+H:\Github_Development\AlignmentLabelStyle\AlignmentLabelStyle\bin\Debug\AlignmentLabelStyle.pdb
+H:\Github_Development\AlignmentLabelStyle\AlignmentLabelStyle\bin\Debug\AecBaseMgd.dll
+H:\Github_Development\AlignmentLabelStyle\AlignmentLabelStyle\bin\Debug\AeccDbMgd.dll
+H:\Github_Development\AlignmentLabelStyle\AlignmentLabelStyle\obj\Debug\AlignmentLabelStyle.dll
+H:\Github_Development\AlignmentLabelStyle\AlignmentLabelStyle\obj\Debug\AlignmentLabelStyle.pdb

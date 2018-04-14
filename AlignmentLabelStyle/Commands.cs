@@ -8,6 +8,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.Civil.ApplicationServices;
 using Autodesk.Civil.DatabaseServices;
+using Autodesk.Civil.DatabaseServices.Styles;
 #endregion
 
 [assembly: CommandClass(typeof(AlignmentLabelStyle.Commands))]
@@ -22,28 +23,28 @@ namespace AlignmentLabelStyle
         {
             CivilDocument civilDoc = CivilApplication.ActiveDocument;
 
-            //string oAlignmentSTName = "Alignment_Level_Style";
-            //Autodesk.Civil.DatabaseServices.Styles.AlignmentStyle oAlignmentStyle = null;
-            //ObjectId alignmentStyleId;
-            //  Check if a style by this name already exists. 
-            try
+            using (Transaction trans = Active.Database.TransactionManager.StartTransaction())
             {
-                for(int i = 0; i < civilDoc.Styles.AlignmentStyles.Count; i++)
-                {
-                    Active.Editor.WriteMessage(string.Format("{0} Label named: {1}", i, civilDoc.Styles.AlignmentStyles[i].ToString()));
-                }
-                //alignmentStyleId = civilDoc.Styles.AlignmentStyles.Item[oAlignmentSTName];
-                //if (alignmentStyleId.IsValid)
-                //{
-                //    MsgBox(("Style : "
-                //                    + (oAlignmentSTName.ToString + (" " + "Already exists in thsi Dwg !"))));
-                //    return;
-                //}
+                // Get the desired Lable Styles collection
+                LabelStyleCollection lblStyleColl = civilDoc.Styles.LabelStyles.AlignmentLabelStyles.GeometryPointLabelStyles;
 
-            }
-            catch (System.Exception ex)
-            {
-                //Autodesk.AutoCAD.DatabaseServices.ObjectId.Null;
+                // Now get the Expression collection
+                // Expressions are unique to a particular label style type.
+                ExpressionCollection expColl = lblStyleColl.Expressions;
+
+                try
+                {
+                    foreach (Expression lblExp in expColl)
+                    {
+                        Active.Editor.WriteMessage("\n Expression Name : " + lblExp.Name);
+                        Active.Editor.WriteMessage("\n Expression String : " + lblExp.ExpressionString);
+                    }
+                    trans.Commit();
+                }
+                catch (Autodesk.AutoCAD.Runtime.Exception ex)
+                {
+                    Active.Editor.WriteMessage("\n Exception message :" + ex.Message);
+                }
             }
 
             //if (alignmentStyleId.IsNull)
